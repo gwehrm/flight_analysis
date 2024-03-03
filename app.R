@@ -12,6 +12,7 @@ library(dplyr)
 library(tidyr)
 library(shinyBS)
 library(leaflet)
+library(randomForest)
 
 dashelp::source_files(c("helper", "modules"))
 
