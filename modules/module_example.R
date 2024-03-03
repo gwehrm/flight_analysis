@@ -141,7 +141,7 @@ overview_server <- function(id, parent_session) {
         column(3,
                valueBox(
                  width = 12,
-                 number_flights, 
+                 number_routes, 
                  "Number of Routes",
                  icon = icon("route"),
                  color = "maroon"
