@@ -4,13 +4,15 @@
 
 sub_df_delay <- df_delays %>%
   mutate(Delay = case_when(Delay == 0 ~ "Punctual",
-                           Delay == 1 ~ "Delayed")) %>% 
-  group_by(Airline, Delay) %>%
+                           Delay == 1 ~ "Delayed"),
+         airline_name = case_when(is.na(airline_name) ~ "NA",
+                                  TRUE ~ airline_name)) %>% 
+  group_by(airline_name, Delay) %>%
   summarise(counter = n(),
             long = min(end_lon),
             lat = min(end_lat)) %>% 
   ungroup %>% 
-  group_by(Airline) %>% 
+  group_by(airline_name) %>% 
   mutate(percentage = counter / sum(counter),
          total = sum(counter)) %>% 
   arrange(percentage)
@@ -18,21 +20,25 @@ sub_df_delay <- df_delays %>%
 
 plot_ly(name = "plot_delay_airline") %>% 
   add_trace(data = sub_df_delay,
-            x = ~Airline,
+            x = ~airline_name,
             y = ~percentage,
             type = "bar",
             name = ~Delay,
-            colors = c("#D95F02", "#1B9E77"),
+            colors = c("#D95F02", "#0f52ba"),
             color = ~Delay) %>% 
   layout(
-    title = "Delay per Airline",
-    yaxis = list(title = 'Proportion',
+    title = list(text = "Delay per Airline",
+                 font = list(size = 35)),
+    yaxis = list(title = list(text = "Prop",
+                              font = list(size = 35)),
                  tickfont = list(size = 35)),
     barmode = 'stack',
-    xaxis = list(title = "Airlines",
+    xaxis = list(title = list(text = "Airline",
+                              font = list(size = 35)),
                  categoryorder = "total descending",
                  tickfont = list(size = 25)),
-    legend = list(font = list(size = 30))) %>%
+    legend = list(font = list(size = 30)),
+    margin = list("t" = 100)) %>%
   event_register("plotly_click")
 
 
@@ -43,8 +49,19 @@ plot_ly(name = "plot_delay_airline") %>%
 
 sub_df_delay <- df_delays %>%
   mutate(Delay = case_when(Delay == 0 ~ "Punctual",
-                           Delay == 1 ~ "Delayed")) %>% 
-  group_by(DayOfWeek, Delay) %>%
+                           Delay == 1 ~ "Delayed"),
+         
+         DayOfWeek_long = case_when(DayOfWeek == 1 ~ "Mon",
+                               DayOfWeek == 2 ~ "Tue",
+                               DayOfWeek == 3 ~ "Wed",
+                               DayOfWeek == 4 ~ "Thu",
+                               DayOfWeek == 5 ~ "Fri",
+                               DayOfWeek == 6 ~ "Sat",
+                               DayOfWeek == 7 ~ "Sun",
+                               )
+         
+         ) %>% 
+  group_by(DayOfWeek,DayOfWeek_long,  Delay) %>%
   summarise(counter = n(),
             long = min(end_lon),
             lat = min(end_lat)) %>% 
@@ -52,26 +69,31 @@ sub_df_delay <- df_delays %>%
   group_by(DayOfWeek) %>% 
   mutate(percentage = counter / sum(counter),
          total = sum(counter)) %>% 
-  arrange(percentage)
+  arrange(desc(DayOfWeek))
 
 
 plot_ly(name = "plot_delay_airline") %>% 
   add_trace(data = sub_df_delay,
-            x = ~DayOfWeek,
+            x = ~DayOfWeek_long,
             y = ~percentage,
             type = "bar",
             name = ~Delay,
-            colors = c("#D95F02", "#1B9E77"),
+            colors = c("#D95F02", "#0f52ba"),
             color = ~Delay) %>% 
   layout(
-    title = "Delay per DayOfWeek",
-    yaxis = list(title = 'Proportion',
+    title = list(text = "Delay per Day of the Week",
+                 font = list(size = 35)),
+    yaxis = list(title = list(text = "Prop",
+                              font = list(size = 35)),
                  tickfont = list(size = 35)),
     barmode = 'stack',
-    xaxis = list(title = "Day of Week",
+    xaxis = list(title = list(text = "Day of the Week",
+                              font = list(size = 35)),
                  categoryorder = "total descending",
                  tickfont = list(size = 25)),
-    legend = list(font = list(size = 30))) %>%
+    legend = list(font = list(size = 30)),
+    margin = list("t" = 100)
+    ) %>%
   event_register("plotly_click")
 
 
@@ -113,17 +135,21 @@ plot_ly(name = "plot_delay_airline") %>%
             y = ~percentage,
             type = "bar",
             name = ~Delay,
-            colors = c("#D95F02", "#1B9E77"),
+            colors = c("#D95F02", "#0f52ba"),
             color = ~Delay) %>% 
   layout(
-    title = "Delay per Length",
-    yaxis = list(title = 'Prop',
+    title =  list(text = "Delay per Flight Duration",
+                  font = list(size = 35)),
+    yaxis = list(title = list(text = "Prop",
+                              font = list(size = 35)),
                  tickfont = list(size = 35)),
     barmode = 'stack',
-    xaxis = list(title = "Length Flight",
+    xaxis = list(title = list(text = "Duration",
+                              font = list(size = 35)),
                  categoryorder = "array",
                  categoryarray = c("< 1h", "1h - 2h", "2h - 3h", "3h - 4h", "4h - 5h", " > 5h"),
                  tickfont = list(size = 35)),
-    legend = list(font = list(size = 30))
+    legend = list(font = list(size = 30)),
+    margin = list("t" = 100)
   ) %>%
   event_register("plotly_click")

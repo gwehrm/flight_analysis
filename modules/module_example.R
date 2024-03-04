@@ -173,8 +173,8 @@ overview_server <- function(id, parent_session) {
         session = parent_session,
         inputId = ns("airline"),
                         choices = airlines,
-                        selected = airlines)      
-      
+                        selected = airlines)    
+
     }, ignoreInit = TRUE)
     
 
@@ -274,16 +274,27 @@ overview_server <- function(id, parent_session) {
         group_by(airline_name_abbr, Delay) %>%
         summarise(counter = n(),
                   long = min(end_lon),
-                  lat = min(end_lat))
+                  lat = min(end_lat)) %>% 
+        ungroup %>% 
+        group_by(airline_name_abbr) %>% 
+        mutate(percentage = counter / sum(counter),
+               total = sum(counter))
       
-      plot_ly(name = "plot_delay_airline") %>% 
+      
+      plot_ly(source = "plot_delay_airline") %>% 
         add_trace(data = sub_df_delay,
               x = ~airline_name_abbr,
               y = ~counter,
               type = "bar",
               name = ~Delay,
-              colors = c("#D95F02", "#1B9E77"),
-              color = ~Delay) %>% 
+              colors = c("#D95F02", "#0f52ba"),
+              color = ~Delay,
+              hoverinfo = "text",
+              hovertext = ~paste0("Airline: ", airline_name_abbr,
+                             "<br>Total Flights: ", total,
+                             "<br>Percentage ",Delay, ": ", round(percentage *100,0), "%")
+              
+              ) %>% 
         layout(
           title = "Delay per Airline",
           yaxis = list(title = 'Flights'),
@@ -295,17 +306,17 @@ overview_server <- function(id, parent_session) {
     })
     
   
-    observeEvent(event_data(event = "plotly_click",
-                            source = "plot_delay_airline"), {
-                              browser()
-                              
-                              clicked <- event_data(event = "plotly_click",
-                                                    source = "plot_delay_airline")
-                              
-                              if (!is.null(clicked)) {
-                                values$selected_airline <- clicked$x
-                              }
-                            })
+    # observeEvent(event_data(event = "plotly_click",
+    #                         source = "plot_delay_airline"), {
+    #                           browser()
+    #                           
+    #                           clicked <- event_data(event = "plotly_click",
+    #                                                 source = "plot_delay_airline")
+    #                           
+    #                           if (!is.null(clicked)) {
+    #                             values$selected_airline <- clicked$x
+    #                           }
+    #                         })
     
     
     output$plot_delay_incoming <- renderPlotly({
@@ -316,15 +327,28 @@ overview_server <- function(id, parent_session) {
         group_by(airport_name_from_abbr, AirportFrom, Delay) %>%
         summarise(counter = n(),
                   long = min(end_lon),
-                  lat = min(end_lat))
+                  lat = min(end_lat)) %>% 
+        ungroup %>% 
+        group_by(airport_name_from_abbr) %>% 
+        mutate(percentage = counter / sum(counter),
+               total = sum(counter))
       
-      plot_ly(name = "plot_delay_incoming") %>% 
+      values$selected_airport <- sub_df_delay %>% 
+        pull(AirportFrom) %>% 
+        unique()
+      
+      
+      plot_ly(source = "plot_delay_incoming") %>% 
         add_trace(data = sub_df_delay,
                   x = ~AirportFrom,
                   y = ~counter,
                   type = "bar",
                   name = ~Delay,
-                  colors = c("#D95F02", "#1B9E77"),
+                  colors = c("#D95F02", "#0f52ba"),
+                  hoverinfo = "text",
+                  hovertext = ~paste0("Airport: ", airport_name_from_abbr,
+                                 "<br>Total Flights: ", total,
+                                 "<br>Percentage ",Delay, ": ", round(percentage *100,0), "%"),
                   color = ~Delay) %>% 
         layout(
           title = "Departure Airport",
@@ -336,21 +360,38 @@ overview_server <- function(id, parent_session) {
       
     })
     
+    # observeEve
+    
+    
+    observeEvent(event_data(event = "plotly_click", source = "plot_delay_incoming"), {
+      
+      clicked <- event_data(event = "plotly_click",
+                            source = "plot_delay_incoming")
+      if (!is.null(clicked)) {
+        values$selected_airport <- clicked$x
+      } else {
+        }
+                            })
+    
+    
     output$plot_delay_time <- renderPlotly({
       
-      sub_df_delay <- values$df_flights %>%
-      # sub_df_delay <- df_delays %>%
-        mutate(Delay = case_when(Delay == 0 ~ "Punctual",
-                                 Delay == 1 ~ "Delay"),
-               time_24 = round(time_24, 0)) %>% 
-        group_by(time_24, Delay) %>% 
-        summarise(counter = n())
+      # 
+      # sub_df_delay <- values$df_flights %>%
+      # # sub_df_delay <- df_delays %>%
+      #   filter(AirportFrom %in% values$selected_airport) %>% 
+      #   mutate(Delay = case_when(Delay == 0 ~ "Punctual",
+      #                            Delay == 1 ~ "Delay"),
+      #          time_24 = round(time_24, 0)) %>% 
+      #   group_by(time_24, Delay) %>% 
+      #   summarise(counter = n())
       
       sub_df_delay <- values$df_flights %>%
         # sub_df_delay <- df_delays %>%
+        filter(AirportFrom %in% values$selected_airport) %>%
         mutate(Delay = case_when(Delay == 0 ~ "Punctual",
                                  Delay == 1 ~ "Delay"),
-               time_24 = round(time_24, 0)) %>% 
+               time_24 = floor(time_24)) %>% 
         group_by(time_24, Delay) %>% 
         summarise(counter = n()) %>% 
         ungroup %>% 
@@ -371,7 +412,11 @@ overview_server <- function(id, parent_session) {
               y = ~counter,
               type = "bar",
               name = ~Delay,
-              colors = c("#D95F02", "#1B9E77"),
+              colors = c("#D95F02", "#0f52ba"),
+              hoverinfo = "text",
+              hovertext = ~paste0("Time: ", time_24,":00",
+                             "<br>Total Flights: ", total,
+                             "<br>Percentage ",Delay, ": ", round(percentage *100,0), "%"),
               color = ~Delay) %>% 
         # 
         # add_trace(data = sub_df_delay %>% filter(Delay == "Punctual"),
@@ -387,6 +432,7 @@ overview_server <- function(id, parent_session) {
         layout(yaxis = list(title = 'Flights'), barmode = 'stack',
                # yaxis2 = ay,
                xaxis = list(categoryorder = "total descending",
+                            range = c(0, 24),
                             title = "Time"))
       
     })

@@ -167,7 +167,6 @@ prediction_server <- function(id, parent_session) {
     output$text_ticket <- renderText({
       validate(need(values$df_sub, message = ""))
       
-      browser()
       airlines <- df_delays %>% 
         dplyr::select(Airline, airline_name_abbr) %>% 
         distinct()
