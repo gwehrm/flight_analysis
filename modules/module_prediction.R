@@ -48,9 +48,14 @@ prediction_ui <- function(id) {
                status = "success",
                solidHeader = TRUE,
                width = 12,
-               plotlyOutput(ns("prediction_delay_airline")))
+               plotlyOutput(ns("prediction_delay_airline"))),
              
-             
+             shinydashboard::box(
+               title = "Ticket",
+               status = "success",
+               solidHeader = TRUE,
+               width = 12,
+               htmlOutput(ns("text_ticket")))           
              
              
              
@@ -152,6 +157,33 @@ prediction_server <- function(id, parent_session) {
           xaxis = list(title = "Airlines",
                        categoryorder = "total ascending"))
         
+      
+      
+      
+      
+    })
+    
+    
+    output$text_ticket <- renderText({
+      validate(need(values$df_sub, message = ""))
+      
+      browser()
+      airlines <- df_delays %>% 
+        dplyr::select(Airline, airline_name_abbr) %>% 
+        distinct()
+      
+      
+      df_plot <- values$df_sub %>% 
+        left_join(airlines, by ="Airline")
+      
+      
+      airline <- df_plot %>% 
+        filter(prediction_delay == min(prediction_delay)) %>% 
+        pull(airline_name_abbr)
+      
+      
+      paste0('Buy your ', airline, ' ticket <a href="https://www.expedia.com/Flights?locale=en_US&siteid=1&semcid=US.MULTILOBF.GOOGLE.GT-c-EN.FLIGHT&semdtl=a114882516568.b1129846236522.g1kwd-297780792895.e1c.m1CjwKCAiA3JCvBhA8EiwA4kujZirouZA9PPg-9dcIONyfKk7QN5SASbP50UKcxW1n6iFvLjX5MOoHRxoCf4wQAvD_BwE.r1b5856f9c17121a52daa22ea50be509d0c3afec73eb924fdc49ba16b7986c55c8.c1HmxhXvb1NR4X6FiQU5Pnpg.j19060229.k1.d1550480922523.h1e.i1.l1.n1.o1.p1.q1.s1.t1.x1.f1.u1.v1.w1&gad_source=1&gclid=CjwKCAiA3JCvBhA8EiwA4kujZirouZA9PPg-9dcIONyfKk7QN5SASbP50UKcxW1n6iFvLjX5MOoHRxoCf4wQAvD_BwE" target="_blank">here!</a>')
+      
       
       
       
